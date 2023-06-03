@@ -4,8 +4,9 @@ from werkzeug.utils import secure_filename
 import mne_procession
 import os
 import tempfile
+from flask import send_file, make_response
 
-
+global raw
 raw = None
 predictions = []
 file = None
@@ -19,6 +20,7 @@ def index():
 
 @app.route('/upload', methods = ['POST'])
 def upload():
+    global raw
     if 'file' not in request.files:
         return jsonify({'message': 'No file part in the request'}), 400
 
@@ -26,7 +28,6 @@ def upload():
     with tempfile.NamedTemporaryFile(delete=False) as tmp:
         file.save(tmp.name)
         raw = mne_procession.load_data(tmp.name)
-        print(raw.info)
 
     return jsonify({'message': 'File successfully uploaded'}), 200
 
@@ -34,12 +35,22 @@ def upload():
 @app.route('/get_plots', methods = ['GET'])
 def get_plots():
 
-    plot = plt.figure()
-    plt.plot([1,2,3,4])
-    plt.ylabel('some numbers')
+    global raw
+    from_ch = request.args.get('from_ch', default=0, type=int)
+    to_ch = request.args.get('to_ch', default=3, type=int)
+    filtered = request.args.get('filtered', default='filtered', type=str)
+    # if not from_ch or not to_ch or not filtered:
+    #     return jsonify({'message': 'Bad request'}), 400
+    
+    data = mne_procession.create_raw_plot_by_chanell(raw, from_ch, to_ch, filtered)
+    
+    # response = make_response(data)
+    # response.headers.set('Content-Type', 'application/zip')
+    # response.headers.set('Content-Disposition', 'attachment', filename='plots.zip')
+    
+    return data
 
-    print(file)
-    return jsonify({'message': 'Here are the plots'}), 200
+
 
 @app.route('/get_predictions', methods = ['GET'])
 def get_predictions():

@@ -1,4 +1,8 @@
 import mne
+import matplotlib.pyplot as plt
+import zipfile
+from io import BytesIO
+import base64
 
 def find_bad_channels(raw, z_threshold=3.0):
     eeg_data = raw.get_data(picks='eeg')
@@ -26,11 +30,18 @@ def load_data(file_name):
 
     return raw
 
-class MneProcessor:
-    pass
+def create_raw_plot_by_chanell(raw, from_ch, to_ch, filtered):
 
-class MnePredictor:
-    pass
+    plots_data = {}
+    for ch_name in raw.ch_names[from_ch:to_ch]:
+        fig = raw.copy().pick_channels([ch_name]).plot_psd(fmax=50)
+        fig.suptitle(ch_name)
+        buf = BytesIO()
+        plt.savefig(buf, format='png')
+        buf.seek(0)
+        
+        data = base64.b64encode(buf.getvalue()).decode('utf-8')
 
-class MnePlotter:
-    pass
+        plots_data[ch_name] = data
+    
+    return plots_data
