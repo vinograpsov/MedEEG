@@ -1,6 +1,9 @@
 from flask import Flask, jsonify, request
 from matplotlib import pyplot as plt
+from werkzeug.utils import secure_filename
 import mne_procession
+import os
+import tempfile
 
 
 raw = None
@@ -18,8 +21,13 @@ def index():
 def upload():
     if 'file' not in request.files:
         return jsonify({'message': 'No file part in the request'}), 400
-    
+
     file = request.files['file']
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        file.save(tmp.name)
+        raw = mne_procession.load_data(tmp.name)
+        print(raw.info)
+
     return jsonify({'message': 'File successfully uploaded'}), 200
 
 
