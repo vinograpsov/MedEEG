@@ -8,6 +8,7 @@ from flask import send_file, make_response
 
 global raw
 raw = None
+filtered_raw = None
 predictions = []
 file = None
 
@@ -42,8 +43,10 @@ def get_plots():
     # if not from_ch or not to_ch or not filtered:
     #     return jsonify({'message': 'Bad request'}), 400
     
-    data = mne_procession.create_raw_plot_by_chanell(raw, from_ch, to_ch, filtered)
-    
+    if filtered == 'filtered':
+        data = mne_procession.create_raw_plot_by_chanell(filtered_raw, from_ch, to_ch)
+    elif filtered == 'raw':
+        data = mne_procession.create_raw_plot_by_chanell(raw, from_ch, to_ch)
     # response = make_response(data)
     # response.headers.set('Content-Type', 'application/zip')
     # response.headers.set('Content-Disposition', 'attachment', filename='plots.zip')
@@ -56,5 +59,29 @@ def get_plots():
 def get_events():
     global raw
     event_dict, events = mne_procession.get_events(raw)
-    data = mne_procession.create_events_plot(raw, events)
+    data = mne_procession.create_events_plot(raw, event_dict, events)
     return data
+
+
+@app.route('/filter_raw', methods = ['POST'])
+def get_filtered():
+    global raw
+    global filtered_raw
+    l_freq = request.args.get('l_freq', default=0, type=int)
+    h_freq = request.args.get('h_freq', default=3, type=int)
+    filtered_raw = mne_procession.filter_raw(raw, l_freq, h_freq)
+    return jsonify({'message': 'Raw filtered'}), 200
+
+
+@app.route('/get_complete_raw_plot', methods = ['GET'])
+def get_complete_raw_plot():
+    global raw
+    global filtered_raw
+    filtered = request.args.get('filtered', default="raw", type=str)
+    if filtered == 'raw':
+        data = mne_procession.create_raw_plot(raw)
+    elif filtered == 'filtered':
+        data = mne_procession.create_raw_plot(filtered_raw)
+
+    return data
+    

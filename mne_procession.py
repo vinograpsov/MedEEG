@@ -33,7 +33,7 @@ def load_data(file_name):
 
     return raw
 
-def create_raw_plot_by_chanell(raw, from_ch, to_ch, filtered):
+def create_raw_plot_by_chanell(raw, from_ch, to_ch):
 
     plots_data = {}
     for ch_name in raw.ch_names[from_ch:to_ch]:
@@ -60,8 +60,6 @@ def get_events(raw):
 def create_events_plot(raw, event_dict, events):
 
     plots_data = {}
-    # event_dict = {'auditory/left': 1, 'auditory/right': 2, 'visual/left': 3,
-    #               'visual/right': 4, 'smiley': 5, 'button': 32}
     fig = mne.viz.plot_events(events, event_id=event_dict, sfreq=raw.info['sfreq'])
 
     buf = BytesIO()
@@ -71,5 +69,27 @@ def create_events_plot(raw, event_dict, events):
     
     data = base64.b64encode(buf.getvalue()).decode('utf-8')
     plots_data["events"] = data
+    
+    return plots_data
+
+
+
+def filter_raw(raw, l_freq=12, h_freq=30):
+    raw_filtered = raw.copy().filter(l_freq=l_freq, h_freq=h_freq, method='fir', phase='zero-double', verbose=True)
+    return raw_filtered
+
+
+def create_raw_plot(raw):
+    
+    plots_data = {}
+    fig = raw.pick_types(eeg=True).plot_psd(fmax=50)
+
+    buf = BytesIO()
+    plt.savefig(buf, format='png')
+    plt.close(fig)
+    buf.seek(0)
+    
+    data = base64.b64encode(buf.getvalue()).decode('utf-8')
+    plots_data["complete_plot"] = data
     
     return plots_data
