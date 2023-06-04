@@ -52,24 +52,9 @@ def get_plots():
 
 
 
-@app.route('/get_predictions', methods = ['GET'])
-def get_predictions():
-    mne_prediction = [1,2,3]
-    # must get mne predicitons from my class
-    for prediction in mne_prediction:  
-        prediction.append(
-            {
-                "main feture": "value",
-                "main feture": "value",
-                "main feture": "value",
-                "main feture": "value",
-                "main feture": "value",
-                "precition": "value"
-            }
-        )
-
-
-    return jsonify({
-            'message': 'Here are the predictions',
-            "predictions": predictions
-        }), 200
+@app.route('/get_events', methods = ['GET'])
+def get_events():
+    global raw
+    event_dict, events = mne_procession.get_events(raw)
+    data = mne_procession.create_events_plot(raw, events)
+    return data

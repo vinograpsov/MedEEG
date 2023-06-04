@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import zipfile
 from io import BytesIO
 import base64
+import numpy as np
+import matplotlib 
+matplotlib.use('Agg')
 
 def find_bad_channels(raw, z_threshold=3.0):
     eeg_data = raw.get_data(picks='eeg')
@@ -43,5 +46,30 @@ def create_raw_plot_by_chanell(raw, from_ch, to_ch, filtered):
         data = base64.b64encode(buf.getvalue()).decode('utf-8')
 
         plots_data[ch_name] = data
+    
+    return plots_data
+
+
+def get_events(raw):
+    events = mne.find_events(raw)
+    event_ids = np.unique(events[:, 2])
+    event_dict = {f'event_{id}': id for id in event_ids}
+
+    return event_dict, events
+
+def create_events_plot(raw, event_dict, events):
+
+    plots_data = {}
+    # event_dict = {'auditory/left': 1, 'auditory/right': 2, 'visual/left': 3,
+    #               'visual/right': 4, 'smiley': 5, 'button': 32}
+    fig = mne.viz.plot_events(events, event_id=event_dict, sfreq=raw.info['sfreq'])
+
+    buf = BytesIO()
+    plt.savefig(buf, format='png')
+    plt.close(fig)
+    buf.seek(0)
+    
+    data = base64.b64encode(buf.getvalue()).decode('utf-8')
+    plots_data["events"] = data
     
     return plots_data
